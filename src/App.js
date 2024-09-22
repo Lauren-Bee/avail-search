@@ -9,31 +9,27 @@ import { TextField, Button, MenuItem, Select, FormControl, InputLabel, Box, Slid
 
 
 function App() {
-  const [searchString, setSearchString] = useState('');       // State for search query
-  const [keywords, setKeywords] = useState('');       // State for search query
-  const [center, setCenter] = useState('');       // State for selected NASA center
-  const [media, setMedia] = useState('');       // State for selected media type
-  const [startYear, setStartYear] = useState('');       // State for selected media type
-  const [endYear, setEndYear] = useState('');       // State for selected media type
-  const [data, setData] = useState([]);         // State for API results
-  const [loading, setLoading] = useState(false); // Loading state
-  const [error, setError] = useState(null);     // Error state
-  const [validationError, setValidationError] = useState(''); // Validation error state
-  const [images, setImages] = useState([]);
-  const submitFlag = 0
+
+  const [items, setItems] = useState([]); // Store full API response items here
   const [formData, setFormData] = useState({
     searchString: '',
     center: '',
-    yearRange: [1920, 2024],
     media: 'image,video,audio',
-    submitFlag: 0
+    yearRange: [1920, 2024],
+    location: '',
+    creator: '',
+    secondary_creator: '',
+    keywords: ''
   });
   const initialFormData = {
     searchString: '',
     center: '',
     media: 'image,video,audio',
     yearRange: [1920, 2024],
-    submitFlag: 0
+    location: '',
+    creator: '',
+    secondary_creator: '',
+    keywords: ''
   };
 
   // NASA centers for the select box
@@ -65,19 +61,23 @@ function App() {
   const handleReset = () => {
     // Reset form data and images to initial states
     setFormData(initialFormData);
-    setImages([]);
+    setItems([]);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     // Construct the API query parameters
-    const { center, yearRange, searchString, media } = formData;
+    const { center, yearRange, searchString, media, creator, secondary_creator, location, keywords } = formData;
     const query = {
       center: center,
       year_start: yearRange[0],
       year_end: yearRange[1],
       media_type: media,
+      location: location,
+      photographer: creator,
+      secondary_creator: secondary_creator,
+      keywords: keywords,
       //page_size: 1000,
       q: searchString ? searchString : ''  // you can replace 'space' with another search term,
     };
@@ -91,13 +91,7 @@ function App() {
       .then((response) => response.json())
       .then((data) => {
         const items = data.collection.items;
-        // Extract image URLs from the API response
-        const imageUrls = items.map((item) => {
-          const links = item.links;
-          return links && links[0] ? links[0].href : null;
-        }).filter(url => url !== null);
-
-        setImages(imageUrls);
+        setItems(items);  // Store full items array
       })
       .catch((error) => {
         console.error('Error fetching data from NASA API:', error);
@@ -173,6 +167,42 @@ function App() {
             </Select>
           </FormControl>
 
+          <TextField
+            fullWidth
+            label="Location"
+            name="location"
+            value={formData.location}
+            onChange={handleChange}
+            margin="normal"
+          />
+
+          <TextField
+            fullWidth
+            label="Primary Creator"
+            name="creator"
+            value={formData.creator}
+            onChange={handleChange}
+            margin="normal"
+          />
+
+          <TextField
+            fullWidth
+            label="Secondary Creator"
+            name="secondary_creator"
+            value={formData.secondary_creator}
+            onChange={handleChange}
+            margin="normal"
+          />
+
+          <TextField
+            fullWidth
+            label="Keywords (separate with comma)"
+            name="keywords"
+            value={formData.keywords}
+            onChange={handleChange}
+            margin="normal"
+          />
+
           {/* Year Range Slider */}
           <FormControl fullWidth margin="normal">
             <Typography gutterBottom>Year Range</Typography>
@@ -198,24 +228,20 @@ function App() {
           </ButtonGroup>
         </form>
       </Box>
-      <Box sx={{ maxWidth: 400, mx: 'auto' }}>
-        {images.length == 0 &&
-          <p>No Results</p>}
-      </Box>
       <Box component="section" sx={{ maxWidth: 1600, mx: 'auto', mt: 4 }}>
-        {images.length > 0 && (<ImageList variant="masonry" cols={3} gap={12}>
-          {images.map((url, index) => (
+        {items.length > 0 && (<ImageList variant="masonry" cols={3} gap={12}>
+          {items.map((item, index) => (
             <ImageListItem key={index}>
               <img
-                src={url}
+                src={item.links && item.links[0] ? item.links[0].href : null}
                 //alt={item.data[0].title}
                 style={{ maxWidth: '100%', maxHeight: '100%' }}
               />
-              {/* <ImageListItemBar
+              <ImageListItemBar
                 title={item.data[0].title}
-                subtitle={<span>created: {new Date(item.data[0].date_created).toLocaleDateString()}</span>}
+                subtitle={<span>{item.data[0].photographer} ({item.data[0].center})<br />{new Date(item.data[0].date_created).toLocaleDateString()}<br />{item.data[0].location}</span>}
                 position="below"
-              /> */}
+              />
             </ImageListItem>
           ))}
         </ImageList>)}
