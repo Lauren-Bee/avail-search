@@ -5,11 +5,13 @@ import Typography from '@mui/material/Typography';
 import ImageList from '@mui/material/ImageList';
 import ImageListItem from '@mui/material/ImageListItem';
 import ImageListItemBar from '@mui/material/ImageListItemBar';
-import { TextField, Button, MenuItem, Select, FormControl, InputLabel, Box, Slider, ButtonGroup } from '@mui/material';
+import { TextField, Button, MenuItem, Select, FormControl, InputLabel, Box, Slider, ButtonGroup, Dialog, DialogTitle, DialogContent } from '@mui/material';
 
 
 function App() {
 
+  const [selectedItem, setSelectedItem] = useState(null); // Store the clicked item for modal
+  const [open, setOpen] = useState(false); // Modal open/close state
   const [items, setItems] = useState([]); // Store full API response items here
   const [formData, setFormData] = useState({
     searchString: '',
@@ -55,6 +57,15 @@ function App() {
     { value: 'image', label: 'Images' },
     { value: 'video', label: 'Video' }
   ];
+
+  const handleClickImage = (item) => {
+    setSelectedItem(item);  // Store the clicked item
+    setOpen(true);  // Open the modal
+  };
+
+  const handleClose = () => {
+    setOpen(false);  // Close the modal
+  };
 
   //Handle form submission to fetch API results
 
@@ -231,7 +242,7 @@ function App() {
       <Box component="section" sx={{ maxWidth: 1600, mx: 'auto', mt: 4 }}>
         {items.length > 0 && (<ImageList variant="masonry" cols={3} gap={12}>
           {items.map((item, index) => (
-            <ImageListItem key={index}>
+            <ImageListItem key={index} onClick={() => handleClickImage(item)}>
               <img
                 src={item.links && item.links[0] ? item.links[0].href : null}
                 //alt={item.data[0].title}
@@ -245,6 +256,30 @@ function App() {
             </ImageListItem>
           ))}
         </ImageList>)}
+
+        {/* Modal Dialog for Image Details */}
+        <Dialog open={open} onClose={handleClose}>
+          <DialogTitle>Image Details</DialogTitle>
+          <DialogContent>
+            {selectedItem && (
+              <>
+                <Typography variant="h6">{selectedItem.data[0].title}</Typography>
+                <img
+                  src={selectedItem.links[0].href}
+                  alt={selectedItem.data[0].title}
+                  style={{ width: '100%', marginTop: '16px' }}
+                />
+                <Typography variant="body1" sx={{ mt: 2 }}>
+                  {selectedItem.data[0].description}
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+                  Date Created: {new Date(selectedItem.data[0].date_created).toLocaleDateString()}
+                </Typography>
+              </>
+            )}
+          </DialogContent>
+        </Dialog>
+
       </Box>
     </div >
   );
